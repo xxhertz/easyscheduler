@@ -34,11 +34,10 @@ export default function createScheduler(options: SchedulerOptions[]) {
 		call_history.set(duration, [])
 	}
 
-
 	return async function schedule<T extends CallableFunction>(fn: T): Promise<ReturnType<T>> {
 		let total_time = 0
 		for (const { duration, call_limit } of options) {
-			const calls_per_duration = call_history.get(duration) as number[] // this is guaranteed to exist unless there was some serious memory issues
+			const calls_per_duration = call_history.get(duration) as number[] // this is guaranteed to exist unless there was some serious memory issues (as per line 34)
 			const time_per_duration = time_until_available(call_limit, duration, calls_per_duration)
 			total_time += time_per_duration
 		}
@@ -56,5 +55,3 @@ export default function createScheduler(options: SchedulerOptions[]) {
 		return schedule(fn)
 	}
 }
-
-const schedule = createScheduler([{ duration: DURATION.SECOND, call_limit: 10 }])
