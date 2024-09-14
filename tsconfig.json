@@ -1,0 +1,33 @@
+{
+	"compilerOptions": {
+		"target": "ES5",
+		"lib": [
+			"ES2015",
+			"ES2016",
+			"ES2017"
+		],
+		"experimentalDecorators": true,
+		"emitDecoratorMetadata": true,
+		"module": "ES2015",
+		"moduleResolution": "Node",
+		"typeRoots": [
+			"node_modules/@types"
+		],
+		"declaration": true,
+		"sourceMap": true,
+		"outDir": "./dist",
+		"rootDir": "./src",
+		"declarationDir": "./dist",
+		"allowSyntheticDefaultImports": true,
+		"esModuleInterop": true,
+		"forceConsistentCasingInFileNames": true,
+		"strict": true,
+		"noImplicitAny": true,
+		"skipLibCheck": true,
+		"composite": true,
+		"declarationMap": true
+	},
+	"include": [
+		"src"
+	]
+}

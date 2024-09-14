@@ -1,0 +1,27 @@
+{
+	"name": "simplescheduler",
+	"version": "1.0.0",
+	"description": "A simple scheduler with customizable and scalable rate limits",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"files": [
+		"dist"
+	],
+	"type": "module",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"keywords": [
+		"scheduler",
+		"ratelimit",
+		"customizable",
+		"rate",
+		"limit"
+	],
+	"author": "fini",
+	"license": "ISC",
+	"devDependencies": {
+		"@types/node": "^22.5.5",
+		"typescript": "^5.6.2"
+	}
+}
