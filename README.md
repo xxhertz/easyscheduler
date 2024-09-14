@@ -31,7 +31,7 @@ In the example above, you might get an output like:
 
 ## Riot Fetch Wrapper Example
 ```js
-import createScheduler, { DURATION } from "simplescheduler"
+import createScheduler, { DURATION } from "easyscheduler"
 const schedule = createScheduler([
 	{ duration: DURATION.SECOND, call_limit: 20 },
 	{ duration: 2 * DURATION.MINUTE, call_limit: 100 }

@@ -1,5 +1,5 @@
 {
-	"name": "simplescheduler",
+	"name": "easyscheduler",
 	"version": "1.0.0",
 	"description": "A simple scheduler with customizable and scalable rate limits",
 	"main": "dist/index.js",
@@ -9,7 +9,7 @@
 	],
 	"type": "module",
 	"scripts": {
-		"test": "echo \"Error: no test specified\" && exit 1"
+		"build": "tsc"
 	},
 	"keywords": [
 		"scheduler",
