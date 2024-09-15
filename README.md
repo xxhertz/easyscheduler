@@ -39,7 +39,7 @@ const schedule = createScheduler([
 
 function riot_fetch(endpoint) {
 	return schedule(async () => { // I don't think async/await does anything here, but I left it just in case..
-		return await fetch(endpoint, { headers: { "X-Riot-Token": "RGAPI-T0K3N" }}).then(res => res.json())
+		return await fetch(endpoint, { headers: { "X-Riot-Token": "RIOT-GAMES-TOKEN" }}).then(res => res.json())
 	})
 }
 ```
