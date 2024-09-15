@@ -13,6 +13,7 @@ schedule(fn) => Promise<fnReturnType> // return type is useful for maps
 `createScheduler` creates a function which follows a rate limit (or multiple as seen in the example below)
 # Example
 ```js
+import createScheduler, { DURATION } from "easyscheduler"
 const schedule = createScheduler([
 	{ duration: DURATION.SECOND, call_limit: 10 },
 	{ duration: 2 * DURATION.SECOND, call_limit: 15 }
@@ -23,7 +24,7 @@ for (let i = 1; i <= 30; i++)
 ```
 `await` is usable & supported, however NOT recommended unless you know what you're doing.
 
-Currently, in 1.0.0, **call order is not consistently respected**. After any rate limitation hits, some calls will be desynced and likely called at the end of the stack.
+Currently, in 1.0, **call order is not consistently respected**. After any rate limitation hits, some calls will be desynced and likely called at the end of the stack.
 
 In the example above, you might get an output like:
 `1...10 (skip 11) 12... (11 at the end)`
