@@ -8,7 +8,7 @@
 		],
 		"experimentalDecorators": true,
 		"emitDecoratorMetadata": true,
-		"module": "ES2015",
+		"module": "ES6",
 		"moduleResolution": "Node",
 		"typeRoots": [
 			"node_modules/@types"
