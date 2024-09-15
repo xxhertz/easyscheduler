@@ -1,4 +1,4 @@
-export const enum DURATION {
+export enum DURATION {
 	SECOND = 1000,
 	MINUTE = 60000,
 	HOUR = 3600000,
