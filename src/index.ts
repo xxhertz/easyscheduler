@@ -1,57 +1,105 @@
-export enum DURATION {
-	SECOND = 1000,
-	MINUTE = 60000,
-	HOUR = 3600000,
-	DAY = 86400000
-}
+/**
+ * A list of commonly used durations of time, useful for quick references
+ */
+export const DURATION = {
+	SECOND: 1000,
+	MINUTE: 60000,
+	HOUR: 3600000,
+	DAY: 86400000
+} as const
 
 type CallableFunction = (...args: any[]) => any
 
+/**
+ * @example
+ * { duration: DURATION.SECOND, call_limit: 10 }
+ */
 type SchedulerOptions = {
-	duration: number | DURATION, call_limit: number
+	readonly duration: number
+	readonly call_limit: number
 }
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
 
-function time_until_available(call_limit: number, duration: number, call_history: number[]) {
-	if (call_history.length >= call_limit) {
-		const time_since_eldest_call = Date.now() - call_history[0]
+export default class Scheduler {
+	private readonly call_history: Map<number, number[]>
+	private readonly options: SchedulerOptions[]
 
-		// our eldest call has not expired yet, we have to wait this amount of time
-		if (time_since_eldest_call < duration)
-			return duration - time_since_eldest_call
-
-		// our eldest call has expired, clear it
-		call_history.shift()
-	}
-	// return 0, signifying that we are ready to call
-	return 0
-}
-
-export default function createScheduler(options: SchedulerOptions[]) {
-	const call_history = new Map<number, number[]>
-	for (const { duration } of options) {
-		call_history.set(duration, [])
+	/**
+	 * Creates a new Scheduler
+	 * 
+	 * @example
+	 * import Scheduler, { DURATION } from "easyscheduler"
+	 * const scheduler = new Scheduler([{ duration: DURATION.SECOND, call_limit: 10 }])
+	 */
+	constructor(options: SchedulerOptions[]) {
+		this.options = options.map(option => ({ duration: option.duration, call_limit: option.call_limit })) // lazy clone
+		this.call_history = new Map<number, number[]>
+		for (const { duration } of this.options)
+			this.call_history.set(duration, [])
 	}
 
-	return async function schedule<T extends CallableFunction>(fn: T): Promise<ReturnType<T>> {
-		let total_time = 0
-		for (const { duration, call_limit } of options) {
-			const calls_per_duration = call_history.get(duration) as number[] // this is guaranteed to exist unless there was some serious memory issues (as per line 34)
-			const time_per_duration = time_until_available(call_limit, duration, calls_per_duration)
-			total_time += time_per_duration
-		}
+	/**
+	 * Calculates when the next function can be executed
+	 * 
+	 * @example
+	 * import Scheduler, { DURATION } from "easyscheduler"
+	 * const scheduler = new Scheduler([{ duration: DURATION.SECOND, call_limit: 10 }])
+	 * 
+	 * for (let i = 1; i <= 30; i++)
+	 * 	scheduler.schedule(console.log, "test")
+	 * 
+	 * console.log(scheduler.time_until_available()) // should read ~1000
+	 */
+	time_until_available() {
+		return Array.from(this.call_history).reduce((previous, [duration, call_history], idx) => {
+			if (call_history.length >= this.options[idx].call_limit) {
+				const time_since_eldest_call = Date.now() - call_history[0]
+				if (time_since_eldest_call < duration)
+					return previous + (duration - time_since_eldest_call) // parenthesis for clarity
+				else
+					call_history.shift()
+			}
 
-		if (total_time == 0) {
+			return 0
+		}, 0)
+	}
+
+	/**
+	 * Schedule a function call to occur whenever next possible. To find out when the function may be called, use Scheduler.time_until_available()
+	 * @example
+	 * import Scheduler, { DURATION } from "easyscheduler"
+	 * const scheduler = new Scheduler([{ duration: DURATION.SECOND, call_limit: 10 }])
+	 * 
+	 * for (let i = 1; i <= 30; i++)
+	 * 	scheduler.schedule(console.log, "test")
+	 * 
+	 */
+	async schedule<T extends CallableFunction>(fn: T, ...args: Parameters<T>): Promise<ReturnType<T>> {
+		let time_until_ready = this.time_until_available()
+		if (time_until_ready == 0) {
 			const now = Date.now()
-			for (const { duration } of options)
-				call_history.get(duration)?.push(now)
+			for (const { duration } of this.options)
+				this.call_history.get(duration)!.push(now)
 
-			return fn()
+			return fn(...args)
 		}
 
-		await sleep(total_time)
+		await sleep(time_until_ready)
 
-		return schedule(fn)
+		return this.schedule(fn, ...args)
+	}
+
+	/**
+	 * A wrapper around `Scheduler.schedule` with the intention of being used for `Array.map`. Also maintains types
+	 * 
+	 * @example
+	 * const scheduler = new Scheduler([{ duration: DURATION.SECOND, call_limit: 10 }])
+	 * const nums = [1, 2, 3]
+	 * const promises = nums.map(scheduler.map(v => v * 10))
+	 * const numsx10 = await Promise.all(promises)
+	 */
+	map<T, U>(fn: (value: T, index: number, array: T[]) => U): (value: T, index: number, array: T[]) => Promise<U> {
+		return (value, index, array) => this.schedule(fn, value, index, array)
 	}
 }

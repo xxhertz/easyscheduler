@@ -1,46 +1,61 @@
-# EXPERIMENTAL - DO NOT USE IN PRODUCTION
+# Why another rate limiter?
+I was using Riot Games' API and they featured two rate limits. They allow 20 requests per second, and 100 every 2 minutes. I couldn't find a solution I deemed simple enough so I made my own. 
 
-# Why?
-I was using Riot Games' API and they feature not one, but two rate limits. 20 every 1 second, and 100 every 2 minutes. No scheduler/rate limiter I came across was simple enough to make this task easy enough to overcome. 
 
-# Usage
-```js
-createScheduler(options: SchedulerOptions[]) => scheduler(fn: Function)
+```ts
+const scheduler = new Scheduler(options: SchedulerOptions[])
 
-schedule(fn) => Promise<fnReturnType> // return type is useful for maps
+scheduler.schedule(fn) => Promise<ReturnType<fn>>
 ```
 
-`createScheduler` creates a function which follows a rate limit (or multiple as seen in the example below)
 # Example
-```js
-import createScheduler, { DURATION } from "easyscheduler"
-const schedule = createScheduler([
+```ts
+import Scheduler, { DURATION } from "easyscheduler"
+const scheduler = new Scheduler([
 	{ duration: DURATION.SECOND, call_limit: 10 },
 	{ duration: 2 * DURATION.SECOND, call_limit: 15 }
 ])
 
 for (let i = 1; i <= 30; i++)
-	schedule(() => console.log(i))
+	scheduler.schedule(console.log, i)
+// or
+for (let i = 1; i <= 30; i++)
+	scheduler.schedule(() => console.log(i))
+
 ```
-`await` is usable & supported, however NOT recommended unless you know what you're doing.
 
-Currently, in 1.0, **call order is not consistently respected**. After any rate limitation hits, some calls will be desynced and likely called at the end of the stack.
+Currently, in 2.0, **call order is not consistently respected**. After any rate limitation hits, calls will be re-ordered to the end of the schedule.
 
-In the example above, you might get an output like:
-`1...10 (skip 11) 12... (11 at the end)`
-`await` syntax fixes this issue (in this context), as nothing gets scheduled until the previously scheduled function calls finish up.
+# Features
 
-## Riot Fetch Wrapper Example
-```js
-import createScheduler, { DURATION } from "easyscheduler"
-const schedule = createScheduler([
+```ts
+// new Scheduler(SchedulerOptions[])
+const scheduler = new Scheduler([{ duration: DURATION.SECOND, call_limit: 10 }])
+
+// scheduler.schedule(fn, ...args)
+for (let i = 1; i <= 30; i++)
+	scheduler.schedule(console.log, "test")
+// scheduler.time_until_available()
+console.log(scheduler.time_until_available()) // in milliseconds, should be around 1000 in this example
+
+// scheduler.map(fn)
+const nums = [1, 2, 3]
+const promises = nums.map(scheduler.map(v => v * 10))
+Promise.all(promises).then(console.log)
+```
+
+# Riot Fetch Wrapper Example
+```ts
+import Scheduler, { DURATION } from "easyscheduler"
+const scheduler = new Scheduler([
 	{ duration: DURATION.SECOND, call_limit: 20 },
 	{ duration: 2 * DURATION.MINUTE, call_limit: 100 }
 ])
 
-function riot_fetch(endpoint) {
-	return schedule(async () => { // I don't think async/await does anything here, but I left it just in case..
-		return await fetch(endpoint, { headers: { "X-Riot-Token": "RIOT-GAMES-TOKEN" }}).then(res => res.json())
-	})
-}
+const riot_fetch = (endpoint: string) => scheduler.schedule(fetch, endpoint, { headers: { "X-Riot-Token": "RIOT-GAMES-TOKEN" } }).then(res => res).then(res => res.json())
 ```
+
+## TODO:
+- [ ] Maintain call order after a rate limit is reached
+- [ ] Add option to maintain call_history records until Promises fully resolve when the function returns a Promise
+- [ ] Add logic to warn for using pointless rate limits (if you can make 1 call per second, there's no point in having a second rate limit that only allows 60 calls per minute)
